@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A4 Flyer Tag Generator </title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .arabicSizeSlider {
+        color: yellow;
+    }
+    body {
+      background-color: #f4f4f9;
+      display: flex;
+      flex-direction: row;
+      min-height: 100vh;
+    }
+
+    /* Mobile Drawer Toggle Button */
+    .mobile-toggle-btn {
+      display: none;
+      position: fixed;
+      bottom: 15px;
+      right: 15px;
+      z-index: 1001;
+      background-color: #1976d2;
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 30px;
+      font-weight: bold;
+      font-size: 14px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      cursor: pointer;
+    }
+
+    /* LEFT SIDE CONTROL PANEL */
+    .controls-wrapper {
+      background: #000;
+      padding: 20px;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      width: 500px;
+      min-width: 400px;
+      height: 100vh;
+      overflow-y: auto;
+      position: sticky;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      z-index: 1000;
+      transition: transform 0.3s ease;
+    }
+
+    .panel-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #1976d2;
+      border-bottom: 2px solid #eef2f5;
+      padding-bottom: 8px;
+    }
+
+    /* Font Size Controls Panel */
+    .font-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #eef2f5;
+      padding: 12px;
+      border-radius: 6px;
+    }
+
+    .font-control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .font-control-group label {
+      font-size: 11px;
+      font-weight: bold;
+      color: #333;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .font-control-group input[type="range"] {
+      cursor: pointer;
+    }
+
+    /* Input Rows Container */
+    #inputRowsContainer {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .input-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: #fdfdfd;
+      border: 1px solid #e0e0e0;
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    .input-row input {
+      padding: 8px 10px;
+      font-size: 13px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      outline: none;
+      width: 100%;
+    }
+
+    .input-row-bottom {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .btn {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-add { background-color: #2e7d32; color: white; flex: 1; }
+    .btn-add:hover { background-color: #1b5e20; }
+
+    .btn-remove { background-color: #c62828; color: white; padding: 6px 10px; font-size: 12px; }
+    .btn-remove:hover { background-color: #8e0000; }
+
+    .btn-generate { background-color: #0277bd; color: white; width: 100%; font-size: 15px; margin-top: 5px; }
+    .btn-generate:hover { background-color: #01579b; }
+
+    .btn-print { background-color: #d32f2f; color: white; font-size: 15px; width: 100%; padding: 10px; }
+    .btn-print:hover { background-color: #b71c1c; }
+
+    /* RIGHT SIDE PREVIEW PANEL */
+    .preview-wrapper {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: auto;
+    }
+
+    .sheets-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      align-items: center;
+    }
+
+    /* A4 Sheet Dimensions - Scaled for screens */
+    .a4-page {
+      width: 210mm;
+      max-width: 100%;
+      height: 297mm;
+      background: white;
+      padding: 6mm;
+      box-shadow: 0 0 10px rgba(0,0,0,0.15);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      page-break-after: always;
+    }
+
+    /* Banner Wrapper */
+    .banner-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+      height: 38.6mm;
+      margin-bottom: 0.5mm;
+    }
+
+    /* FULL WIDTH BANNER */
+    .banner {
+      width: 100%;
+      height: 100%;
+      border: 1px dashed #bbb;
+      display: flex;
+      position: relative;
+      background-image: url('images/SUPER-SERVER.png');
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      overflow: hidden;
+    }
+
+    .banner-actions {
+      position: absolute;
+      right: -35px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .btn-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: none;
+      background-color: #1976d2;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .btn-circle:hover { background-color: #115293; }
+
+    /* Inner Alignment */
+    .badge-spacer {
+      width: 17%;
+      flex-shrink: 0;
+    }
+
+    .info-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 0 5px;
+      text-align: center;
+    }
+
+    .arabic-text {
+      font-size: 13px;
+      font-weight: bold;
+      direction: rtl;
+      margin-bottom: 3px;
+      color: #000;
+      line-height: 1.1;
+    }
+
+    .english-text {
+      font-size: 13px;
+      font-weight: 800;
+      color: #000;
+      line-height: 1.1;
+      text-transform: uppercase;
+    }
+
+    .price-section {
+      width: 40%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .price-container {
+      display: flex;
+      align-items: baseline;
+    }
+
+    /* Custom Double-Barred Dirham Symbol Design */
+    .currency-symbol-custom {
+      position: relative;
+      display: inline-block;
+      font-size: 40px;
+      font-weight: 900;
+      font-family: 'Times New Roman', Georgia, serif;
+      margin-right: 6px;
+      line-height: 1;
+    }
+
+    .currency-symbol-custom::before,
+    .currency-symbol-custom::after {
+      content: '';
+      position: absolute;
+      left: -4px;
+      width: 100%;
+      height: 3px;
+      background-color: white;
+    }
+
+    .currency-symbol-custom::before { top: 38%; }
+    .currency-symbol-custom::after { top: 58%; }
+
+    .price-main { font-size: 52px; font-weight: 900; line-height: 1; }
+    .price-decimal { font-size: 30px; font-weight: 900; line-height: 1; }
+
+    /* MEDIA QUERIES FOR TABLETS & MOBILE DEVICES */
+    @media (max-width: 900px) {
+      body {
+        flex-direction: column;
+      }
+
+      .mobile-toggle-btn {
+        display: block;
+      }
+
+      .controls-wrapper {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 320px;
+        min-width: 320px;
+        height: 100vh;
+        transform: translateX(-100%);
+      }
+
+      .controls-wrapper.active {
+        transform: translateX(0);
+      }
+
+      .preview-wrapper {
+        padding: 10px;
+        width: 100%;
+      }
+
+      .a4-page {
+        height: auto;
+        min-height: 297mm;
+      }
+    }
+
+    /* PRINT STYLES FOR A4 PAPER */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 0;
+      }
+
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+      }
+
+      body {
+        background: none;
+        display: block;
+        padding: 0;
+        margin: 0;
+      }
+
+      .controls-wrapper, .mobile-toggle-btn, .banner-actions {
+        display: none !important;
+      }
+
+      .preview-wrapper {
+        padding: 0;
+      }
+
+      .sheets-wrapper { gap: 0; }
+
+      .a4-page {
+        box-shadow: none;
+        margin: 0;
+        width: 210mm;
+        height: 297mm;
+        padding: 6mm;
+      }
+
+      .banner { border: 1px dashed #ccc; }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="mobile-toggle-btn" onclick="toggleSidebar()">⚙️ Settings</button>
+
+  <div class="controls-wrapper" id="sidebar">
+    <div class="panel-title">Flyer Settings</div>
+
+    <div class="font-controls">
+      <div class="font-control-group">
+        <label><span>Arabic Text Size</span> <span id="arabicSizeVal">13px</span></label>
+        <input type="range" id="arabicSizeSlider" min="8" max="24" value="13" oninput="updateFontSizes()">
+      </div>
+      <div class="font-control-group">
+        <label><span>English Name Size</span> <span id="englishSizeVal">13px</span></label>
+        <input type="range" id="englishSizeSlider" min="8" max="24" value="13" oninput="updateFontSizes()">
+      </div>
+      <div class="font-control-group">
+        <label><span>Price Text Size</span> <span id="priceSizeVal">52px</span></label>
+        <input type="range" id="priceSizeSlider" min="30" max="75" value="52" oninput="updateFontSizes()">
+      </div>
+      <div class="font-control-group">
+        <label><span>Dirham Symbol Size</span> <span id="symbolSizeVal">40px</span></label>
+        <input type="range" id="symbolSizeSlider" min="20" max="60" value="40" oninput="updateFontSizes()">
+      </div>
+    </div>
+
+    <div id="inputRowsContainer">
+      <div class="input-row">
+        <input type="text" class="in-english" placeholder="English Name" value="">
+        <input type="text" class="in-arabic" placeholder="Arabic Name" value="">
+        <div class="input-row-bottom">
+          <input type="number" step="0.01" class="in-price" placeholder="Price" value="">
+          <button class="btn btn-remove" onclick="removeRow(this)">Delete Row ✕</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <button class="btn btn-add" onclick="addNewRow()">+ Add Item Row</button>
+      <button class="btn btn-generate" onclick="generateFlyers()">Update Preview</button>
+      <button class="btn btn-print" id="printBtn" style="display: none;" onclick="window.print()">Print A4 Sheet</button>
+    </div>
+  </div>
+
+  <div class="preview-wrapper">
+    <div class="sheets-wrapper" id="sheetsWrapper"></div>
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('active');
+    }
+
+    function updateFontSizes() {
+      const englishSize = document.getElementById('englishSizeSlider').value + 'px';
+      const arabicSize = document.getElementById('arabicSizeSlider').value + 'px';
+      const priceMainSize = document.getElementById('priceSizeSlider').value;
+      const priceDecimalSize = Math.round(priceMainSize * 0.58) + 'px';
+      const symbolSize = document.getElementById('symbolSizeSlider').value + 'px';
+
+      document.getElementById('englishSizeVal').innerText = englishSize;
+      document.getElementById('arabicSizeVal').innerText = arabicSize;
+      document.getElementById('priceSizeVal').innerText = priceMainSize + 'px';
+      document.getElementById('symbolSizeVal').innerText = symbolSize;
+
+      document.querySelectorAll('.english-text').forEach(el => el.style.fontSize = englishSize);
+      document.querySelectorAll('.arabic-text').forEach(el => el.style.fontSize = arabicSize);
+      document.querySelectorAll('.price-main').forEach(el => el.style.fontSize = priceMainSize + 'px');
+      document.querySelectorAll('.price-decimal').forEach(el => el.style.fontSize = priceDecimalSize);
+      document.querySelectorAll('.currency-symbol-custom').forEach(el => el.style.fontSize = symbolSize);
+    }
+
+    function addNewRow(arabic = '', english = '', price = '0.00', targetIndex = null) {
+      const container = document.getElementById('inputRowsContainer');
+      const row = document.createElement('div');
+      row.className = 'input-row';
+      row.innerHTML = `
+        <input type="text" class="in-english" placeholder="English Name" value="${english}">
+        <input type="text" class="in-arabic" placeholder="Arabic Name" value="${arabic}">
+        <div class="input-row-bottom">
+          <input type="number" step="0.01" class="in-price" placeholder="Price" value="${price}">
+          <button class="btn btn-remove" onclick="removeRow(this)">Delete Row ✕</button>
+        </div>
+      `;
+
+      if (targetIndex !== null && container.children[targetIndex]) {
+        container.children[targetIndex].after(row);
+      } else {
+        container.appendChild(row);
+      }
+    }
+
+    function removeRow(btn) {
+      const rows = document.querySelectorAll('.input-row');
+      if (rows.length > 1) {
+        btn.closest('.input-row').remove();
+        generateFlyers();
+      }
+    }
+
+    function createBannerElement(arabic, english, price, index) {
+      const numPrice = parseFloat(price) || 0;
+      const parts = numPrice.toFixed(2).split('.');
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'banner-wrapper';
+
+      wrapper.innerHTML = `
+        <div class="banner">
+          <div class="badge-spacer"></div>
+          <div class="info-section">
+            <div class="arabic-text">${arabic}</div>
+            <div class="english-text">${english}</div>
+          </div>
+          <div class="price-section">
+            <div class="price-container">
+              <span class="currency-symbol-custom">D</span>
+              <span class="price-main">${parts[0]}</span>
+              <span class="price-decimal">.${parts[1]}</span>
+            </div>
+          </div>
+        </div>
+        <div class="banner-actions">
+          <button class="btn-circle" title="Duplicate Tag" onclick="duplicateBanner(this, ${index})">+</button>
+        </div>
+      `;
+      return wrapper;
+    }
+
+    function duplicateBanner(btn, index) {
+      const wrapper = btn.closest('.banner-wrapper');
+      const english = wrapper.querySelector('.english-text').innerText;
+      const arabic = wrapper.querySelector('.arabic-text').innerText;
+      const mainPrice = wrapper.querySelector('.price-main').innerText;
+      const decPrice = wrapper.querySelector('.price-decimal').innerText.replace('.', '');
+      const price = `${mainPrice}.${decPrice}`;
+
+      addNewRow(arabic, english, price, index);
+      generateFlyers();
+    }
+
+    function generateFlyers() {
+      const sheetsWrapper = document.getElementById('sheetsWrapper');
+      sheetsWrapper.innerHTML = '';
+
+      const rows = document.querySelectorAll('.input-row');
+      let currentSheet = createNewA4Page();
+      sheetsWrapper.appendChild(currentSheet);
+
+      let tagCount = 0;
+
+      rows.forEach((row, index) => {
+        const english = row.querySelector('.in-english').value;
+        const arabic = row.querySelector('.in-arabic').value;
+        const price = row.querySelector('.in-price').value;
+
+        if (arabic || english) {
+          const banner = createBannerElement(arabic, english, price, index);
+
+          if (tagCount > 0 && tagCount % 8 === 0) {
+            currentSheet = createNewA4Page();
+            sheetsWrapper.appendChild(currentSheet);
+          }
+
+          currentSheet.appendChild(banner);
+          tagCount++;
+        }
+      });
+
+      document.getElementById('printBtn').style.display = tagCount > 0 ? 'block' : 'none';
+      updateFontSizes();
+    }
+
+    function createNewA4Page() {
+      const page = document.createElement('div');
+      page.className = 'a4-page';
+      return page;
+    }
+
+    generateFlyers();
+  </script>
+</body>
+</html>
